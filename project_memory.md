@@ -120,3 +120,54 @@ src/shared/types.ts            →  src/shared/__tests__/types.test.ts
 - **源工程**：`E:\laboratory\AI\Agents\feature-agent-core`（Python FastAPI + Vue 3）
 - **源工程 plan_memory**：[../feature-agent-core/project_memory.md](../feature-agent-core/project_memory.md)（2051+ 行，记录原 Python 工程的全部模块、数据结构、API、并发队列、Skills 系统等）
 - **迁移策略**：从原 `app/tests/core/*` 47 个 pytest 用例 1:1 翻译起步；新结构按本工程 `__tests__/` 约定组织
+
+## Phase 0 实施记录（2026-06-23 完成）
+
+### 已交付的脚手架
+
+| Task | 状态 | 提交 | 关键产物 |
+|------|------|------|----------|
+| 0.1 目录骨架 + pnpm init | ✅ | 1da5320 | `package.json`、`.gitignore`、`.nvmrc` (Node 20.19.2)、`README.md` |
+| 0.2 TypeScript 配置 | ✅ | b708695 | `tsconfig.json`（renderer/shared）、`tsconfig.electron.json`（main/preload）；strict 模式 + 多路径别名 |
+| 0.3 Vitest + Playwright | ✅ | c61fb8e | `vitest.config.ts`、`playwright.config.ts`、`tests/unit/sanity.test.ts`（2 用例通过） |
+| 0.4 Electron 主进程骨架 | ✅ | 212ab7f | `src/main/main.ts`、`src/preload/preload.ts`、`src/renderer/{App.vue,main.ts,index.html}`、`vite.config.ts`、`src/main/__tests__/main.test.ts`（3 用例通过） |
+| 0.5 ESLint + Prettier | ✅ | 56ad3ea / a216153 | `eslint.config.js`（flat config）、`.prettierrc`、`.prettierignore` |
+| 0.6 E2E smoke | ✅ | 1c72eb8 | `tests/e2e/smoke.test.ts`（**注**：electron 二进制需联网下载，CI 环境需先 `pnpm rebuild electron`） |
+| 0.7 目录结构最终化 | ✅ | 7372278 | `src/main/{core,mcp,agents,services,storage}/` + 子目录、`.gitkeep` 占位 |
+| 收尾验证 | ✅ | d18f836 | `vitest.config.ts` 排除 `tests/e2e/`；全量 `typecheck` + `test` (5/5) + `lint` 0 errors 通过 |
+
+### 关键工程参数
+
+- **Node**: 20.19.2（`.nvmrc` 锁定）
+- **TypeScript**: 5.9.3（strict 全开：`noImplicitAny` / `strictNullChecks` / `noUnusedLocals` / `noUnusedParameters` / `exactOptionalPropertyTypes`）
+- **pnpm**: 10.34.4
+- **Electron**: 32.3.3（webPreferences: `contextIsolation: true` / `nodeIntegration: false` / `sandbox: true` / preload 桥接）
+- **Vue**: 3.5.38 + vue-router 4.6.4 + pinia 3.0.4
+- **Vite**: 6.4.3（与 `@vitejs/plugin-vue@5.x` 配套；v8 不兼容）
+- **测试栈**: vitest 4.1.9 + @vitest/coverage-v8 4.1.9 + @playwright/test 1.61.0
+- **代码规范**: ESLint 10.5.0（flat config）+ Prettier 3.8.4
+- **测试 Mock**: `src/main/__tests__/setup.ts` 统一注入 electron mock（避免重复 mock）
+
+### 路径别名
+
+| 别名 | 指向 | 用于 |
+|------|------|------|
+| `@main/*` | `src/main/*` | 主进程代码（主进程测试亦可） |
+| `@preload/*` | `src/preload/*` | preload 桥接 |
+| `@renderer/*` | `src/renderer/*` | 渲染层 |
+| `@shared/*` | `src/shared/*` | 跨进程共享类型 |
+
+### 验证命令
+
+```bash
+pnpm typecheck    # tsc --noEmit（renderer + electron 双 tsconfig）
+pnpm test         # vitest run（5/5 通过）
+pnpm lint         # eslint . --ext .ts,.vue（0 errors）
+pnpm test:e2e     # playwright test（需先 pnpm rebuild electron 安装二进制）
+```
+
+### Phase 1 准备
+
+- 主进程核心模块目录 `src/main/core/{agent,command,concurrency,config,format,llmcalls,messages,router,skills,tools}/` 已就位
+- 翻译源：`E:\laboratory\AI\Agents\feature-agent-core\app\core/*`（40 个 Python 文件）+ `app/tests/core/*`（47 个 pytest 用例作为参考）
+- 翻译顺序：config → messages → concurrency → skills → llmcalls → tools → agent → router
