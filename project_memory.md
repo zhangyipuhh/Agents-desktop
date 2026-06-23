@@ -333,3 +333,97 @@ pnpm lint         # 0 errors
 pnpm dev          # 启动 Vite 渲染层 (http://localhost:5173)
 pnpm dev:electron # 启动 Electron 桌面端 (需先 pnpm rebuild electron)
 ```
+
+---
+
+## Phase 2 实施记录（2026-06-23 — MCPClient TS 化 + 桌面配置）
+
+### 本次会话新交付
+
+| Task | 状态 | 提交 | 关键产物 | 测试数 |
+|------|------|------|----------|--------|
+| 2.1 MCPConfigSchema (Zod) | ✅ | 6da3080 | `src/main/mcp/shared/mcpConfigSchema.ts`（Sampling / ProgressReporting / ToolConfig 子 schema + sse/http/stdio refine） | 20 |
+| 2.2 ConfigManager | ✅ | 24b3a4c | `src/main/mcp/shared/ConfigManager.ts`（JSON 持久化 + change/add/update/remove/toggle 事件 + YAML 导入/导出） | 16 |
+| 2.3 UnifiedMCPClient | ✅ | 8061b39 | `src/main/mcp/core/UnifiedMCPClient.ts`（包装 MultiServerMCPClient + ctor 注入式 mock + best-effort close + cross-spawn spawn hints） | 13 |
+| 2.4 MCP IPC Handlers + UI | ✅ | 3738ebe | `src/main/mcp/router/mcpRouter.ts`（9 channel）+ `src/renderer/views/Settings/McpConfigView.vue` + preload `mcp` 域 + `@shared/types/mcp.ts` | 11 |
+| P2 收尾 | ✅ | (待 commit) | typecheck 0 / lint 0 / build OK / **271 测试通过** | — |
+
+**测试总数**：211 (Phase 1 末) + 60 (Phase 2 新增) = **271 通过 / 0 typecheck / 0 lint / build OK**
+
+### 本次新增的关键决策（已落地）
+
+1. **MCP Zod 4.x 严格 schema**：
+   - `SamplingConfigSchema` / `ProgressReportingConfigSchema` / `ToolConfigSchema` 子 schema
+   - 默认值：`enabled=true` 改为 spec 默认 `enabled=false`（让用户主动开）
+   - `McpServerConfigSchema` 用 `.refine()` 强制 sse/http 必须有 `url`，stdio 必须有 `command`
+   - 同时暴露 `McpServerConfigInput` (z.input) 给上层做 partial form，`McpServerConfig` (z.output) 给运行时
+
+2. **ConfigManager 事件粒度**：
+   - 内部统一走 `persist()` → `change` 事件（payload：完整 config）
+   - 细粒度事件（`add` / `update` / `remove` / `toggle`）由各方法在 `change` 之后额外 emit
+   - `importFromYaml` 后用 `save()` 触发 `change`，不 emit 细粒度事件（YAML 整体替换语义）
+   - 启动时若 `mcp-config.json` 不存在，自动从 `seedConfigPath` 复制种子配置；seed 缺失/损坏时落空配置
+
+3. **UnifiedMCPClient 构造器注入（关键架构决策）**：
+   - **不**用 `vi.mock('@langchain/mcp-adapters')`（ESM hoisted mock 在 vitest 有边角问题：`new MockedClass()` 报 "is not a constructor"）
+   - 改为构造函数参数 `ClientCtor: MultiServerMCPClientCtor` 注入；测试时传 fake class
+   - 默认从 `@langchain/mcp-adapters` 导入真实 `MultiServerMCPClient`
+   - 这种 DI 模式比 `vi.mock` 更稳定，与 spec §3.4 中"协议层独立 + 单元测试可独立 mock"的对齐
+
+4. **UnifiedMCPClient 行为要点**：
+   - `setConfig` 同步、立即生效；`initialize` 异步建立连接
+   - best-effort `close`：旧连接失败时 `emit('error', e)`，不阻断新连接
+   - 0 个 enabled server 时 `this.client = null`，不构造 MultiServerMCPClient
+   - `getStdioSpawnOptions(cfg)` 返回 cross-spawn 兼容参数（`{command, args, env, windowsHide: true}`）— Windows 下若需要替换适配器内部 spawn 为 cross-spawn，可基于此返回
+
+5. **MCP IPC 9 channel 命名**（与 spec §3.7 对齐）：
+   - `mcp:list-servers` / `mcp:list-tools` / `mcp:test-connection`
+   - `mcp:add-server` / `mcp:update-server` / `mcp:remove-server` / `mcp:toggle-server`
+   - `mcp:import-yaml` / `mcp:export-yaml`
+   - `mcp:test-connection` 触发 `mcpClient.initialize()`，返回 `{ok: true}` 或 `{ok: false, error}`
+
+6. **Preload mcp 域**：
+   - 在 `src/preload/preload.ts` 暴露 `window.electronAPI.mcp.*` 9 个方法
+   - 每个方法 JSDoc 标注 channel 名 + 参数类型 + Promise resolve/reject 形态
+   - 类型通过 `@shared/types/mcp.ts` re-export `McpServerConfig` 体系
+
+7. **McpConfigView.vue 设计**：
+   - 表格展示 + 内联添加对话框（简化版，未用 Element Plus drawer）
+   - 启停 / 测试 / 删除 / 新增四类操作
+   - 错误展示用顶部红条（避免阻塞操作流）
+
+8. **ESLint Vue globals 补全**：
+   - 新增 `Event` / `HTMLInputElement` / `HTMLSelectElement` / `File` / `Blob` / `URLSearchParams` / `FormData` 等浏览器全局
+   - 避免 `.vue` 文件中显式类型断言触发 `no-undef`
+
+9. **Zod 4.x `z.input` vs `z.output`**：
+   - `z.infer` 在 v4.x 等价于 `z.output`（含 default 应用后），所以 partial input 必须用 `z.input`
+   - `McpServerConfig` schema 同时导出两种类型；输入用 input，运行时用 output
+   - 测试 helper 函数 `sse()` / `stdio()` 用 `McpServerConfigInput` 返回类型
+
+### 工程指标（Phase 2 末）
+
+- **测试**: 271 通过（23 文件）/ coverage 暂未跑
+- **TypeScript**: 0 errors
+- **ESLint**: 0 errors
+- **Build**: vue-tsc + vite build + tsc electron 全通过
+- **新增依赖**：`@langchain/mcp-adapters@1.1.3` / `cross-spawn@7.0.6` / `@types/cross-spawn@6.0.6`
+
+### Phase 2 Commits
+
+```
+6da3080  feat(mcp): McpConfigFile zod schema with sse/http/stdio refine + 20 tests
+24b3a4c  feat(mcp): ConfigManager with JSON persistence + events + yaml import/export + 16 tests
+8061b39  feat(mcp): UnifiedMCPClient with ctor injection + 13 tests + cross-spawn spawn hints
+3738ebe  feat(mcp): IPC handlers (9 channels) + McpConfigView.vue + preload mcp domain + 11 tests
+```
+
+### 下次会话快速恢复指引
+
+1. **目标工程**：`E:\laboratory\AI\Agents-desktop`
+2. **环境**：`conda activate "E:\laboratory\AI\Agents"` + `pnpm@10.34.4`
+3. **当前状态**：`pnpm test` → **271/271 通过**；`pnpm typecheck` 0 errors；`pnpm lint` 0 errors；`pnpm build` 成功
+4. **下一步起点**：Phase 3 — `CommandRouter`（spec §3.1 核心创新）+ `AgentEngine`（descriptor → LangGraph 图）+ `/command` UI
+5. **参考文档**：
+   - 设计 spec：`E:\laboratory\AI\Agents-desktop\superpowers\specs\2026-06-23-feature-agent-desktop-typescript-design.md`
+   - 实施 plan：`E:\laboratory\AI\Agents-desktop\superpowers\plans\2026-06-23-feature-agent-desktop-typescript.md`
