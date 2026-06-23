@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      js-yaml:
+        specifier: ^5.1.0
+        version: 5.1.0
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.38(typescript@5.9.3))
@@ -27,6 +30,9 @@ importers:
       '@playwright/test':
         specifier: ^1.61.0
         version: 1.61.0
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
       '@types/node':
         specifier: ^26.0.0
         version: 26.0.0
@@ -493,6 +499,9 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  '@types/js-yaml@4.0.9':
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
+
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
@@ -707,6 +716,9 @@ packages:
   ansi-styles@6.2.3:
     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
+
+  argparse@2.0.1:
+    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -1021,6 +1033,10 @@ packages:
 
   js-tokens@10.0.0:
     resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
+
+  js-yaml@5.1.0:
+    resolution: {integrity: sha512-s8VA5jkR8f22S3NAXmhKPFqGUduqZGlsufabVOgN14iTdw/RXcym7bKkbwjxLK9Yw2lEvvmJjFp119+KPeo8Kg==}
+    hasBin: true
 
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
@@ -1787,6 +1803,8 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  '@types/js-yaml@4.0.9': {}
+
   '@types/json-schema@7.0.15': {}
 
   '@types/node@26.0.0':
@@ -2081,6 +2099,8 @@ snapshots:
       color-convert: 2.0.1
 
   ansi-styles@6.2.3: {}
+
+  argparse@2.0.1: {}
 
   assertion-error@2.0.1: {}
 
@@ -2404,6 +2424,10 @@ snapshots:
   js-cookie@3.0.8: {}
 
   js-tokens@10.0.0: {}
+
+  js-yaml@5.1.0:
+    dependencies:
+      argparse: 2.0.1
 
   json-buffer@3.0.1: {}
 
