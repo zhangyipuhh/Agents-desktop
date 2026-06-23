@@ -30,6 +30,7 @@ export default defineConfig({
       'tests/**/*.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', '**/out/**'],
+    setupFiles: ['src/main/__tests__/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],

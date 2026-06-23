@@ -19,15 +19,16 @@ describe('electron main smoke', () => {
 
   it('BrowserWindow constructor returns a window-like object', async () => {
     const { BrowserWindow } = await import('electron');
-    const w = new (BrowserWindow as any)();
-    expect(w.on).toBeDefined();
-    expect(w.webContents).toBeDefined();
+    const win = new BrowserWindow();
+    expect(win.on).toBeDefined();
+    expect(win.webContents).toBeDefined();
   });
 
   it('ipcMain.handle can be invoked', async () => {
     const { ipcMain } = await import('electron');
     const handler = vi.fn(() => 'pong');
-    (ipcMain.handle as any)('ping', handler);
-    expect((ipcMain.handle as any)).toHaveBeenCalledWith('ping', expect.any(Function));
+    vi.mocked(ipcMain.handle).mockImplementationOnce(() => undefined);
+    ipcMain.handle('ping', handler);
+    expect(ipcMain.handle).toHaveBeenCalledWith('ping', expect.any(Function));
   });
 });
