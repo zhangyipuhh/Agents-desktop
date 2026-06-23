@@ -7,7 +7,7 @@
  * 类型来源：`src/preload/preload.ts` 中的 `export type ElectronAPI = typeof api`
  */
 
-import type { ElectronAPI } from '../preload/preload';
+import type { ElectronAPI } from '../../preload/preload';
 
 declare global {
   interface Window {
