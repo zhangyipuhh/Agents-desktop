@@ -14,3 +14,4 @@ test-results/
 .env
 .env.local
 pnpm-debug.log*
+.trae/
