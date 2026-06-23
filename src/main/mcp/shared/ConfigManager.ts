@@ -19,6 +19,7 @@ import {
   McpServerConfigSchema,
   type McpConfigFile,
   type McpServerConfig,
+  type McpServerConfigInput,
 } from './mcpConfigSchema';
 
 export interface ConfigManagerOptions {
@@ -91,7 +92,7 @@ export class ConfigManager extends EventEmitter {
     try {
       raw = await fs.readFile(this.filePath, 'utf-8');
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
+      if ((e as { code?: string }).code === 'ENOENT') {
         return await this.bootstrap();
       }
       throw e;
@@ -148,10 +149,10 @@ export class ConfigManager extends EventEmitter {
   /**
    * 添加新 server。重复名称会拒绝。
    *
-   * @param server 待添加的 server 配置（name 必填）
+   * @param server 待添加的 server 配置（name 必填；其他字段可省略走 default）
    * @throws 重名 / Zod 校验失败时抛出
    */
-  async addServer(server: McpServerConfig): Promise<void> {
+  async addServer(server: McpServerConfigInput): Promise<void> {
     const cfg = this.cache ?? (await this.load());
     if (cfg.servers[server.name]) {
       throw new Error(`Server ${server.name} already exists`);

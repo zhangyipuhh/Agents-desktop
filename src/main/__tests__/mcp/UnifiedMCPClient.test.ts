@@ -6,16 +6,16 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedMCPClient } from '@main/mcp/core/UnifiedMCPClient';
-import type { McpServerConfig } from '@main/mcp/shared/mcpConfigSchema';
+import type { McpServerConfigInput } from '@main/mcp/shared/mcpConfigSchema';
 
-const sse = (name: string, url: string, enabled = true): McpServerConfig => ({
+const sse = (name: string, url: string, enabled = true): McpServerConfigInput => ({
   name,
   enabled,
   type: 'sse',
   url,
 });
 
-const stdio = (name: string, command: string, args: string[] = [], enabled = true): McpServerConfig => ({
+const stdio = (name: string, command: string, args: string[] = [], enabled = true): McpServerConfigInput => ({
   name,
   enabled,
   type: 'stdio',
@@ -86,13 +86,13 @@ describe('UnifiedMCPClient', () => {
 
     it('throws when given sse server without url', () => {
       expect(() => {
-        client.setConfig({ bad: { name: 'bad', type: 'sse' } as McpServerConfig });
+        client.setConfig({ bad: { name: 'bad', type: 'sse' } as McpServerConfigInput });
       }).toThrow(/url/);
     });
 
     it('throws when given stdio server without command', () => {
       expect(() => {
-        client.setConfig({ bad: { name: 'bad', type: 'stdio' } as McpServerConfig });
+        client.setConfig({ bad: { name: 'bad', type: 'stdio' } as McpServerConfigInput });
       }).toThrow(/command/);
     });
   });

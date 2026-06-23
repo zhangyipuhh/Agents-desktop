@@ -17,7 +17,7 @@
 import { EventEmitter } from 'node:events';
 import { MultiServerMCPClient as DefaultMultiServerMCPClient } from '@langchain/mcp-adapters';
 import type { Connection } from '@langchain/mcp-adapters';
-import type { McpServerConfig } from '../shared/mcpConfigSchema';
+import type { McpServerConfig, McpServerConfigInput } from '../shared/mcpConfigSchema';
 
 /** MultiServerMCPClient 构造器类型（用于可注入式 mock） */
 export type MultiServerMCPClientCtor = new (
@@ -82,9 +82,10 @@ export class UnifiedMCPClient extends EventEmitter {
    * 切换整体配置并重建底层连接。
    * 内部会先 best-effort `close` 旧连接，再 `initializeConnections()` 新连接。
    */
-  setConfig(servers: Record<string, McpServerConfig>): void {
+  setConfig(servers: Record<string, McpServerConfigInput>): void {
     // 校验：sse/http 必须有 url，stdio 必须有 command
     for (const [, cfg] of Object.entries(servers)) {
+      if (!cfg) continue;
       if ((cfg.type === 'sse' || cfg.type === 'http') && !cfg.url) {
         throw new Error(`server ${cfg.name}: url is required for ${cfg.type}`);
       }
@@ -92,7 +93,7 @@ export class UnifiedMCPClient extends EventEmitter {
         throw new Error(`server ${cfg.name}: command is required for stdio`);
       }
     }
-    this.servers = servers;
+    this.servers = servers as Record<string, McpServerConfig>;
     this.emit('change', { servers: Object.keys(servers).filter((k) => servers[k]?.enabled) });
   }
 
@@ -156,9 +157,8 @@ export class UnifiedMCPClient extends EventEmitter {
       args: cfg.args ?? [],
       env: cfg.env,
       stderr: 'pipe',
-      windowsHide: true,
       restart: { enabled: true, maxAttempts: 3, delayMs: 1000 },
-    };
+    } as Connection;
   }
 
   /**
@@ -188,7 +188,10 @@ export class UnifiedMCPClient extends EventEmitter {
     if (!this.client) throw new Error('MCP client not initialized');
     const client = await this.client.getClient(serverName);
     if (!client) throw new Error(`server ${serverName} is not connected`);
-    const result = (await client.callTool({ name: toolName, arguments: args })) as McpCallResult;
+    const result = (await client.callTool({
+      name: toolName,
+      arguments: (args ?? {}) as Record<string, unknown>,
+    })) as McpCallResult;
     return result;
   }
 
@@ -209,7 +212,7 @@ export class UnifiedMCPClient extends EventEmitter {
    * 外部可以基于此用 cross-spawn 启动真正的子进程（适配器内部已用 spawn 包装，
    * 但若需要替换为 cross-spawn 解决 Windows 命令行问题，可参考此返回）。
    */
-  getStdioSpawnOptions(cfg: McpServerConfig): StdioSpawnOptions | null {
+  getStdioSpawnOptions(cfg: McpServerConfig | McpServerConfigInput): StdioSpawnOptions | null {
     if (cfg.type !== 'stdio' || !cfg.command) return null;
     return {
       command: cfg.command,

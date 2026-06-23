@@ -91,8 +91,9 @@ export const McpConfigFileSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
-export type McpConfigFile = z.infer<typeof McpConfigFileSchema>;
-export type SamplingConfig = z.infer<typeof SamplingConfigSchema>;
-export type ProgressReportingConfig = z.infer<typeof ProgressReportingConfigSchema>;
-export type ToolConfig = z.infer<typeof ToolConfigSchema>;
+export type McpServerConfigInput = z.input<typeof McpServerConfigSchema>;
+export type McpServerConfig = z.output<typeof McpServerConfigSchema>;
+export type McpConfigFile = z.output<typeof McpConfigFileSchema>;
+export type SamplingConfig = z.output<typeof SamplingConfigSchema>;
+export type ProgressReportingConfig = z.output<typeof ProgressReportingConfigSchema>;
+export type ToolConfig = z.output<typeof ToolConfigSchema>;

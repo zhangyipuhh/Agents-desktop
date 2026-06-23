@@ -11,27 +11,108 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
+import type { McpServerConfig } from '../shared/types/mcp';
 
-/**
- * 暴露给渲染进程的 API 契约
- *
- * 后续每个域（command / mcp / agents / session / file / profile / settings）都会在此追加方法。
- * 每个方法的 JSDoc 必须标注：
- * 1. 调用的 IPC channel 名（必须与主进程 `ipcMain.handle` 配对）
- * 2. 参数类型
- * 3. 返回 Promise 的 resolve 类型 / 可能 reject 的错误形态
- */
+export interface McpTestResult {
+  ok: boolean;
+  error?: string;
+}
+
+export interface McpListItem {
+  name: string;
+  type: 'sse' | 'http' | 'stdio';
+  url?: string;
+  command?: string;
+  enabled: boolean;
+}
+
 const api = {
   /**
    * IPC channel: `ping`
-   *
    * @returns Promise<string> resolve 为 'pong'；不会 reject
    */
   ping: (): Promise<string> => ipcRenderer.invoke('ping'),
+
+  /**
+   * MCP 域：mcpConfigView 等设置页通过此域读写 MCP 配置
+   */
+  mcp: {
+    /**
+     * IPC channel: `mcp:list-servers`
+     * @returns Promise<McpServerConfig[]> 全部 server 列表
+     */
+    listServers: (): Promise<McpServerConfig[]> => ipcRenderer.invoke('mcp:list-servers'),
+
+    /**
+     * IPC channel: `mcp:list-tools`
+     * @param serverName string
+     * @returns Promise<unknown[]> 该 server 暴露的工具
+     */
+    listTools: (serverName: string): Promise<unknown[]> =>
+      ipcRenderer.invoke('mcp:list-tools', serverName),
+
+    /**
+     * IPC channel: `mcp:test-connection`
+     * @param serverName string
+     * @returns Promise<McpTestResult>
+     */
+    testConnection: (serverName: string): Promise<McpTestResult> =>
+      ipcRenderer.invoke('mcp:test-connection', serverName),
+
+    /**
+     * IPC channel: `mcp:add-server`
+     * @param server McpServerConfig
+     * @returns Promise<void>
+     */
+    addServer: (server: McpServerConfig): Promise<void> =>
+      ipcRenderer.invoke('mcp:add-server', server),
+
+    /**
+     * IPC channel: `mcp:update-server`
+     * @param name string
+     * @param patch Partial<McpServerConfig>
+     * @returns Promise<void>
+     */
+    updateServer: (name: string, patch: Partial<McpServerConfig>): Promise<void> =>
+      ipcRenderer.invoke('mcp:update-server', name, patch),
+
+    /**
+     * IPC channel: `mcp:remove-server`
+     * @param name string
+     * @returns Promise<void>
+     */
+    removeServer: (name: string): Promise<void> =>
+      ipcRenderer.invoke('mcp:remove-server', name),
+
+    /**
+     * IPC channel: `mcp:toggle-server`
+     * @param name string
+     * @param enabled boolean
+     * @returns Promise<void>
+     */
+    toggleServer: (name: string, enabled: boolean): Promise<void> =>
+      ipcRenderer.invoke('mcp:toggle-server', name, enabled),
+
+    /**
+     * IPC channel: `mcp:import-yaml`
+     * @param yamlPath string
+     * @returns Promise<void>
+     */
+    importYaml: (yamlPath: string): Promise<void> =>
+      ipcRenderer.invoke('mcp:import-yaml', yamlPath),
+
+    /**
+     * IPC channel: `mcp:export-yaml`
+     * @param yamlPath string
+     * @returns Promise<void>
+     */
+    exportYaml: (yamlPath: string): Promise<void> =>
+      ipcRenderer.invoke('mcp:export-yaml', yamlPath),
+  },
 };
 
 /**
- * 类型导出（供 `src/renderer/env.d.ts` 或 `src/shared/types/window.d.ts` 引用）
+ * 类型导出（供 `src/shared/types/window.d.ts` 引用）
  */
 export type ElectronAPI = typeof api;
 
