@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-electron/
+out/
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+playwright-report/
+test-results/
+.turbo/
+.cache/
+.env
+.env.local
+pnpm-debug.log*
