@@ -27,9 +27,10 @@ export default defineConfig({
     include: [
       'src/**/__tests__/**/*.test.ts',
       'src/**/__tests__/**/*.test.tsx',
-      'tests/**/*.test.ts',
+      'tests/unit/**/*.test.ts',
+      'tests/integration/**/*.test.ts',
     ],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/out/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-electron/**', '**/out/**', 'tests/e2e/**'],
     setupFiles: ['src/main/__tests__/setup.ts'],
     coverage: {
       provider: 'v8',
