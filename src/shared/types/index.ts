@@ -11,3 +11,4 @@
 export * from './common';
 export * from './message';
 export * from './llm';
+export * from './agentDescriptor';

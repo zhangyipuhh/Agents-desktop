@@ -43,6 +43,8 @@ export default [
         Promise: 'readonly',
         URL: 'readonly',
         Buffer: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
       },
     },
     plugins: { '@typescript-eslint': tsPlugin },
