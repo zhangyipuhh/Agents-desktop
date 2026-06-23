@@ -68,6 +68,7 @@ src/shared/types.ts            →  src/shared/__tests__/types.test.ts
 | 入口 | `/command/{agentId}` 单一入口，可在设置中配置 | 替代 `/api/contract/chat`、`/api/map/chat` 等多路由 |
 | 配置存储 | `userData/mcp-config.json`（Zod schema 校验） | 旧 `app/shared/tools/mcp/config.yaml` 兼容，首次启动可导入 |
 | 认证 | 免登录 + 匿名本地存档 + 多 Profile（默认 `default`） | 适配多用户共用一台设备场景 |
+| **并发队列** | **不需要** | **桌面端每个用户独占本机资源，无共享后端；直接删除 `app/core/concurrency/` 整层** |
 | 数据目录 | `<userData>/profiles/{profileId}/{upload,sessions,Knowledge,...}/` | 与本仓 `data/` 解耦 |
 | 测试 | Vitest（单测+集成）+ Playwright（E2E） | 从原 47 个 pytest 用例 1:1 翻译起步 |
 | 流程 | 严格 TDD（RED → GREEN → REFACTOR） | 用户硬性要求 |
