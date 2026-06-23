@@ -53,7 +53,7 @@ describe('SettingsService', () => {
 
     it('dockerMode 枚举校验', () => {
       expect(SandboxSettingsSchema.safeParse({ dockerMode: 'local' }).success).toBe(true);
-      expect(SandboxSettingsSchema.safeParse({ dockerMode: 'unknown' as any }).success).toBe(false);
+      expect(SandboxSettingsSchema.safeParse({ dockerMode: 'unknown' as unknown as 'local' }).success).toBe(false);
     });
   });
 

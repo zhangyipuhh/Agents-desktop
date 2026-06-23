@@ -155,7 +155,7 @@ export class SettingsService {
       const raw = await fs.readFile(filePath, 'utf-8');
       return new SettingsService(JSON.parse(raw));
     } catch (e) {
-      const err = e as NodeJS.ErrnoException;
+      const err = e as { code?: string };
       if (err.code === 'ENOENT') {
         // 首次启动：使用默认配置
         return new SettingsService({});
